@@ -116,55 +116,60 @@ Os requisitos abaixo evoluem os 15 requisitos originais do Eixo 1, incorporando 
 
 O diagrama a seguir representa os principais casos de uso do SurfBook, organizados por ator.
 
+![Diagrama de Casos de Uso](assets/graph-1.jpg)
+
+**Atores:**
+
+| Ator | Casos de Uso | Observação |
+|------|-------------|------------|
+| **Estudante** | CSU01 a CSU13 | Acesso completo a todas as funcionalidades |
+| **Visitante** | CSU13 | Somente leitura via link de compartilhamento |
+| **Administrador** | CSU01 a CSU13 + Gerenciar Usuários + Impersonar | Permissões elevadas |
+
+<details>
+<summary>Codigo Mermaid do diagrama</summary>
+
+```mermaid
+flowchart TB
+    subgraph SurfBook [" SurfBook "]
+
+        subgraph auth [" Autenticação "]
+            CSU01([Cadastrar Conta — CSU01])
+            CSU02([Autenticar — CSU02])
+            CSU03([Gerenciar Perfil — CSU03])
+            CSU04([Recuperar Senha — CSU04])
+        end
+
+        subgraph content [" Gestão de Conteúdo "]
+            CSU05([Gerenciar Cadernos — CSU05])
+            CSU06([Gerenciar Conteúdo — CSU06])
+            CSU07([Editar Blocos — CSU07])
+            CSU08([Categorizar Tags — CSU08])
+        end
+
+        subgraph tools [" Ferramentas "]
+            CSU09([Buscar Conteúdo — CSU09])
+            CSU10([Gerenciar Tarefas — CSU10])
+            CSU11([Gerenciar Calendário — CSU11])
+            CSU12([Visualizar Grafo — CSU12])
+            CSU13([Compartilhar Caderno — CSU13])
+        end
+
+        subgraph adm [" Administração "]
+            GU([Gerenciar Usuários])
+            IMP([Impersonar])
+        end
+
+    end
+
+    CSU01 -.-> CSU03
+    CSU02 -.-> CSU04
+    CSU07 -->|include| CSU06
+    CSU06 -->|include| CSU05
+    CSU06 -.->|extend| CSU08
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                           SurfBook                                  │
-│                                                                     │
-│  ┌──────────────────┐    ┌──────────────────┐                       │
-│  │  Cadastrar Conta │    │  Autenticar      │                       │
-│  │      (CSU01)     │    │    (CSU02)       │                       │
-│  └────────┬─────────┘    └────────┬─────────┘                       │
-│           │                       │                                  │
-│  ┌────────┴─────────┐    ┌───────┴──────────┐                       │
-│  │  Gerenciar Perfil│    │ Recuperar Senha  │                       │
-│  │     (CSU03)      │    │    (CSU04)       │                       │
-│  └──────────────────┘    └──────────────────┘                       │
-│                                                                     │
-│  ┌──────────────────┐    ┌──────────────────┐    ┌────────────────┐ │
-│  │Gerenciar Cadernos│    │Gerenciar Conteúdo│    │ Editar Blocos  │ │
-│  │     (CSU05)      │◄───│     (CSU06)      │◄───│   (CSU07)     │ │
-│  └──────────────────┘    └────────┬─────────┘    └────────────────┘ │
-│                                   │                                  │
-│                          ┌────────┴─────────┐                       │
-│                          │ Categorizar Tags  │                       │
-│                          │    (CSU08)        │                       │
-│                          └──────────────────┘                        │
-│                                                                     │
-│  ┌──────────────────┐    ┌──────────────────┐    ┌────────────────┐ │
-│  │  Buscar Conteúdo │    │Gerenciar Tarefas │    │ Gerenciar      │ │
-│  │     (CSU09)      │    │    (CSU10)       │    │ Calendário     │ │
-│  └──────────────────┘    └──────────────────┘    │   (CSU11)      │ │
-│                                                   └────────────────┘ │
-│  ┌──────────────────┐    ┌──────────────────┐                       │
-│  │  Visualizar Grafo│    │  Compartilhar    │                       │
-│  │     (CSU12)      │    │  Caderno (CSU13) │                       │
-│  └──────────────────┘    └──────────────────┘                       │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
 
-    Atores:
-    ┌─────────┐    → CSU01–CSU13
-    │Estudante│
-    └─────────┘
-
-    ┌──────────┐   → Visualizar caderno compartilhado (somente leitura)
-    │Visitante │
-    └──────────┘
-
-    ┌──────────────┐  → CSU01–CSU13 + Gerenciar Usuários + Impersonar
-    │Administrador │
-    └──────────────┘
-```
+</details>
 
 ### 3.4.2 Descrições de Casos de Uso
 
@@ -385,79 +390,115 @@ b) O Sistema exibe um painel lateral com detalhes do item e link para navegaçã
 
 O diagrama a seguir representa o modelo de domínio do SurfBook, baseado na implementação do Eixo 1 com melhorias propostas.
 
+![Diagrama de Classes](assets/graph-2.jpg)
+
+<details>
+<summary>Codigo Mermaid do diagrama</summary>
+
+```mermaid
+classDiagram
+    class User {
+        +String id
+        +String name
+        +String fullName
+        +String email
+        +String password
+        +Enum role
+        +Date createdAt
+        +Date updatedAt
+    }
+
+    class Notebook {
+        +String id
+        +String name
+        +String description
+        +String icon
+        +String image
+        +Date due_date
+        +Date createdAt
+        +Date updatedAt
+    }
+
+    class ContentMetadata {
+        +String id
+        +String name
+        +String description
+        +String icon
+        +String notebook_id
+        +String content_id
+        +Date due_date
+        +Date createdAt
+        +Date updatedAt
+    }
+
+    class ContentNode {
+        +String id
+        +Enum type
+        +String value
+        +Int position
+        +String notebook_id
+        +String content_id
+        +Array customStyle
+    }
+
+    class Tag {
+        +String name
+        +String color
+    }
+
+    class Task {
+        +String id
+        +String title
+        +String description
+        +Enum priority
+        +Date due_date
+        +Date completed_at
+        +Int level
+        +String parent_id
+        +Enum parent_type
+        +Object parent_location
+        +Date created_at
+        +Date updated_at
+    }
+
+    class Event {
+        +String id
+        +String name
+        +String description
+        +Boolean all_day
+        +Date start_date
+        +Date end_date
+        +Enum priority
+        +String owner
+        +String[] guests
+        +Object parent_location
+        +Enum parent_type
+        +Date created_at
+        +Date updated_at
+    }
+
+    class SearchIndexItem {
+        +Enum type
+        +String label
+        +Object localization
+        +String[] terms
+    }
+
+    User "1" --> "*" Notebook
+    Notebook "1" --> "*" ContentMetadata
+    ContentMetadata "1" --> "*" ContentNode
+    ContentMetadata "*" --> "*" Tag : categoriza
+    Tag "*" ..> "*" ContentMetadata : conecta conteúdos que compartilham a mesma tag
+    Task "*" ..> "0..1" Notebook : parent_location
+    Task "*" ..> "0..1" ContentMetadata : parent_location
+    Event "*" ..> "0..1" Notebook : parent_location
+    Event "*" ..> "0..1" ContentMetadata : parent_location
+    SearchIndexItem ..> Notebook : indexa
+    SearchIndexItem ..> ContentMetadata : indexa
+    SearchIndexItem ..> ContentNode : indexa
 ```
-┌─────────────────────┐       ┌──────────────────────┐
-│        User         │       │      Notebook         │
-├─────────────────────┤       ├──────────────────────┤
-│ id: string          │ 1   * │ id: string            │
-│ name: string        │───────│ name: string          │
-│ fullName: string    │       │ description: string   │
-│ email: string       │       │ icon: string          │
-│ password: string    │       │ image: string         │
-│ role: enum          │       │ due_date: Date?       │
-│ createdAt: Date     │       │ createdAt: Date       │
-│ updatedAt: Date     │       │ updatedAt: Date       │
-└─────────────────────┘       └──────────┬───────────┘
-                                         │ 1
-                                         │
-                                         │ *
-                              ┌──────────┴───────────┐
-                              │   ContentMetadata     │
-                              ├──────────────────────┤
-                              │ id: string            │
-                              │ name: string          │
-                              │ description: string   │
-                              │ icon: string          │
-                              │ notebook_id: string   │
-                              │ content_id: string    │
-                              │ due_date: Date?       │
-                              │ createdAt: Date       │
-                              │ updatedAt: Date       │
-                              └──────┬──────┬────────┘
-                                     │ 1    │ *
-                                     │      │
-                                * ┌──┘      └──┐ *
-                    ┌─────────────┴──┐   ┌─────┴────────────┐
-                    │  ContentNode    │   │      Tag          │
-                    ├────────────────┤   ├──────────────────┤
-                    │ id: string     │   │ name: string      │
-                    │ type: enum     │   │ color: string     │
-                    │ value: string  │   └──────────────────┘
-                    │ position: int  │          │ *
-                    │ notebook_id    │          │
-                    │ content_id     │          │ (conecta conteúdos
-                    │ customStyle[]  │          │  que compartilham
-                    └────────────────┘          │  a mesma tag)
-                                               │
-                              ┌─────────────────┘
-                              │
-┌─────────────────────┐       │       ┌──────────────────────┐
-│       Task          │       │       │       Event           │
-├─────────────────────┤       │       ├──────────────────────┤
-│ id: string          │       │       │ id: string            │
-│ title: string       │       │       │ name: string          │
-│ description: string │       │       │ description: string   │
-│ priority: enum      │       │       │ all_day: boolean      │
-│ due_date: Date      │       │       │ start_date: Date      │
-│ completed_at: Date? │       │       │ end_date: Date        │
-│ level: int          │       │       │ priority: enum        │
-│ parent_id: string?  │       │       │ owner: string         │
-│ parent_type: enum   │       │       │ guests: string[]      │
-│ parent_location: obj│       │       │ parent_location: obj  │
-│ created_at: Date    │       │       │ parent_type: enum     │
-│ updated_at: Date    │       │       │ created_at: Date      │
-└─────────────────────┘       │       │ updated_at: Date      │
-                              │       └──────────────────────┘
-                              │
-                    ┌─────────┴──────────┐
-                    │  SearchIndexItem    │
-                    ├────────────────────┤
-                    │ type: enum         │
-                    │ label: string      │
-                    │ localization: obj  │
-                    │ terms: string[]    │
-                    └────────────────────┘
-```
+
+</details>
 
 **Tipos Enumerados:**
 - `User.role`: `user` | `admin`
