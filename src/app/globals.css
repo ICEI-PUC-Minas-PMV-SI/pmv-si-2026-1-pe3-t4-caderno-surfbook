@@ -1,0 +1,105 @@
+@import "tailwindcss";
+
+/*
+  SurfBook — Design Tokens
+  Tokens centralizam decisões visuais do design system. Cada token é justificado
+  no documento docs/design.md (Eixo-3) pelos princípios de Gestalt, lentes
+  cognitiva/semiótica e regras de ouro de Shneiderman.
+*/
+
+:root {
+  /* Marca — mantém a cor primária do logo do eixo-1 */
+  --brand-50:  oklch(0.97 0.02 256);
+  --brand-100: oklch(0.93 0.05 256);
+  --brand-200: oklch(0.86 0.10 256);
+  --brand-300: oklch(0.77 0.15 256);
+  --brand-400: oklch(0.66 0.20 256);
+  --brand-500: oklch(0.56 0.22 256);  /* primária ≈ #145AF1 */
+  --brand-600: oklch(0.48 0.21 256);
+  --brand-700: oklch(0.40 0.18 256);
+  --brand-800: oklch(0.32 0.14 256);
+  --brand-900: oklch(0.24 0.10 256);
+
+  /* Neutros */
+  --bg:        oklch(0.99 0.002 250);
+  --surface:   oklch(1 0 0);
+  --border:    oklch(0.92 0.005 250);
+  --muted:     oklch(0.96 0.004 250);
+  --muted-fg:  oklch(0.50 0.01 250);
+  --fg:        oklch(0.20 0.01 250);
+
+  /* Semânticas */
+  --success:   oklch(0.62 0.18 145);
+  --warning:   oklch(0.75 0.16 75);
+  --danger:    oklch(0.58 0.22 25);
+
+  /* Raio */
+  --radius-sm: 6px;
+  --radius:    10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  /* Sombra base — discreta, segue ergonomia (não distrai) */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow:    0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.06);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.10), 0 4px 6px -4px rgb(0 0 0 / 0.08);
+
+  /* Transição padrão — feedback rápido sem distrair */
+  --transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@theme inline {
+  --color-brand-50:  var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-200: var(--brand-200);
+  --color-brand-300: var(--brand-300);
+  --color-brand-400: var(--brand-400);
+  --color-brand-500: var(--brand-500);
+  --color-brand-600: var(--brand-600);
+  --color-brand-700: var(--brand-700);
+  --color-brand-800: var(--brand-800);
+  --color-brand-900: var(--brand-900);
+
+  --color-bg:        var(--bg);
+  --color-surface:   var(--surface);
+  --color-border:    var(--border);
+  --color-muted:     var(--muted);
+  --color-muted-foreground: var(--muted-fg);
+  --color-foreground: var(--fg);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger:  var(--danger);
+
+  --radius-sm: var(--radius-sm);
+  --radius:    var(--radius);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+
+  --font-sans:    var(--font-inter);
+  --font-display: var(--font-sora);
+}
+
+* {
+  border-color: var(--border);
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Foco visível em todos interativos — acessibilidade (G3) */
+:where(a, button, input, select, textarea, [role="button"], [tabindex]):focus-visible {
+  outline: 2px solid var(--brand-500);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
