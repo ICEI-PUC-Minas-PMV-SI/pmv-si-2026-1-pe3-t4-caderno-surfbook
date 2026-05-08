@@ -1,8 +1,10 @@
 import { markdownToNodes } from "@/lib/markdown-nodes";
 import { saveSort } from "@/lib/notes-sort";
 import { colorForTagName } from "@/components/ui/tag-selector/tag-selector";
+import { eventService } from "@/services/event-service";
 import { noteService } from "@/services/note-service";
 import { notebookService } from "@/services/notebook-service";
+import { taskService } from "@/services/task-service";
 import type { Tag } from "@/types/tag";
 
 /**
@@ -556,7 +558,80 @@ export async function seedTutorialIfNeeded(): Promise<void> {
         nodes: markdownToNodes(body),
       });
     }
+
+    // Semeia entidades-exemplo vinculadas ao tutorial — assim o usuário
+    // já vê tarefas/eventos reais aparecendo em /tarefas, /calendario e
+    // no grafo desde o primeiro login.
+    await seedExampleEntities(tutorial.id);
   } catch (err) {
     console.error("[seedTutorial]", err);
   }
+}
+
+/**
+ * Cria 2 eventos standalone, 1 árvore de tarefas (root + 2 sub-tarefas) e
+ * 1 tarefa avulsa, todos vinculados ao caderno-tutorial. Datas relativas
+ * ao "hoje" do primeiro login pra os exemplos parecerem vivos
+ * (próximos prazos, datas no calendário).
+ *
+ * Idempotência: já protegido pelo `if (hasTutorial) return` no caller —
+ * só roda no primeiro login.
+ */
+async function seedExampleEntities(notebookId: string): Promise<void> {
+  function isoDate(offsetDays: number): string {
+    const d = new Date();
+    d.setDate(d.getDate() + offsetDays);
+    return d.toISOString().slice(0, 10);
+  }
+
+  const exampleTags = [tag("tutorial"), tag("exemplo")];
+
+  // ---------- Eventos ----------
+  await eventService.createStandalone({
+    name: "Revisar o tutorial",
+    description: "Passar pelas 8 notas e marcar tudo como cumprido",
+    startDate: isoDate(0), // hoje
+    priority: "high",
+    notebookId,
+    tags: exampleTags,
+  });
+  await eventService.createStandalone({
+    name: "Explorar o grafo de conhecimento",
+    description: "Ver as conexões entre as notas do tutorial",
+    startDate: isoDate(1), // amanhã
+    priority: "medium",
+    notebookId,
+    tags: exampleTags,
+  });
+
+  // ---------- Tarefas com hierarquia ----------
+  const rootTask = await taskService.createStandalone({
+    title: "Criar meu primeiro caderno real",
+    description: "Pode ser de uma matéria, projeto ou diário pessoal",
+    dueDate: isoDate(2),
+    priority: "high",
+    notebookId,
+    tags: exampleTags,
+  });
+  await taskService.createStandalone({
+    title: "Adicionar 2-3 notas no caderno",
+    parentId: rootTask.id,
+    notebookId,
+    tags: exampleTags,
+  });
+  await taskService.createStandalone({
+    title: "Usar a mesma tag em duas delas pra ver o grafo conectar",
+    parentId: rootTask.id,
+    notebookId,
+    tags: exampleTags,
+  });
+
+  // Tarefa standalone solta (sem parent) — demonstra o nível raiz
+  await taskService.createStandalone({
+    title: "Marcar este item como cumprido pra ver o efeito",
+    dueDate: isoDate(0),
+    priority: "low",
+    notebookId,
+    tags: exampleTags,
+  });
 }
