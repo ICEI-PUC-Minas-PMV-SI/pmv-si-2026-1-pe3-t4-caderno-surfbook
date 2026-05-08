@@ -96,13 +96,19 @@ export function markdownToNodes(md: string): NoteNode[] {
     const checkOrdered = line.match(/^( *)\d+\.\s+\[([ xX])\]\s+(.+)$/);
     if (checkUnordered || checkOrdered) {
       const ordered = !!checkOrdered;
-      const items: { checked: boolean; text: string; indent: number }[] = [];
+      const items: {
+        id: string;
+        checked: boolean;
+        text: string;
+        indent: number;
+      }[] = [];
       while (i < lines.length) {
         const m = ordered
           ? lines[i].match(/^( *)\d+\.\s+\[([ xX])\]\s+(.+)$/)
           : lines[i].match(/^( *)[-*]\s+\[([ xX])\]\s+(.+)$/);
         if (!m) break;
         items.push({
+          id: crypto.randomUUID(),
           checked: m[2].toLowerCase() === "x",
           text: m[3].trim(),
           indent: Math.floor(m[1].length / 2),

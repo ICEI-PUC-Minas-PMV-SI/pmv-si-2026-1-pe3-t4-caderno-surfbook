@@ -11,7 +11,10 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useState } from "react";
 
+import { CompletionCheckbox } from "@/components/feature/completion-checkbox";
+import { GraphView } from "@/components/feature/graph-view";
 import { NoteEditor } from "@/components/feature/note-editor";
+import { NoteOutline } from "@/components/feature/note-outline";
 import { Button } from "@/components/ui/button/button";
 import {
   Dialog,
@@ -56,6 +59,8 @@ export default function NoteEditorPage() {
   const [title, setTitle] = useState("");
   const [nodes, setNodes] = useState<NoteNode[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
+  const [dueDate, setDueDate] = useState<string>("");
+  const [completedAt, setCompletedAt] = useState<string | null>(null);
   const [tagSuggestions, setTagSuggestions] = useState<Tag[]>([]);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -75,6 +80,8 @@ export default function NoteEditorPage() {
         setTitle(n.title);
         setNodes(n.nodes ?? []);
         setTags(n.tags ?? []);
+        setDueDate(n.dueDate ?? "");
+        setCompletedAt(n.completedAt ?? null);
       }
     });
   }, [noteId, notebookId]);
@@ -105,7 +112,13 @@ export default function NoteEditorPage() {
       if (!note || saving) return;
       setSaving(true);
       try {
-        await noteService.update(note.id, { title, nodes, tags });
+        await noteService.update(note.id, {
+          title,
+          nodes,
+          tags,
+          dueDate: dueDate || null,
+          completedAt,
+        });
         setDirty(false);
         if (!opts.silent) {
           toast({ title: "Nota salva", variant: "success" });
@@ -120,7 +133,7 @@ export default function NoteEditorPage() {
         setSaving(false);
       }
     },
-    [note, saving, title, nodes, tags, toast]
+    [note, saving, title, nodes, tags, dueDate, completedAt, toast]
   );
 
   // Cmd/Ctrl+S salva
@@ -227,7 +240,8 @@ export default function NoteEditorPage() {
   }
 
   return (
-    <div className="mx-auto flex h-full max-w-3xl flex-col gap-5">
+    <div className="flex h-full gap-6">
+      <div className="mx-auto flex max-w-3xl flex-1 flex-col gap-5 min-w-0">
       <div className="flex items-center justify-between gap-3">
         <Link
           href={`/cadernos/${notebookId}`}
@@ -293,11 +307,56 @@ export default function NoteEditorPage() {
           onChange={markDirty(setTags)}
           suggestions={tagSuggestions}
         />
+        <div className="text-muted-foreground flex items-center gap-2 text-xs">
+          <label htmlFor="note-due-date" className="shrink-0">
+            Data limite:
+          </label>
+          <input
+            id="note-due-date"
+            type="date"
+            value={dueDate}
+            onChange={(e) => markDirty(setDueDate)(e.target.value)}
+            className="bg-transparent outline-none focus-visible:ring-1 focus-visible:ring-brand-300 rounded px-1 py-0.5"
+          />
+          {dueDate && (
+            <button
+              type="button"
+              onClick={() => markDirty(setDueDate)("")}
+              className="hover:text-foreground underline-offset-2 hover:underline"
+            >
+              Remover
+            </button>
+          )}
+        </div>
+        {dueDate && (
+          <CompletionCheckbox
+            completedAt={completedAt}
+            onChange={(v) => markDirty(setCompletedAt)(v)}
+          />
+        )}
       </div>
 
       <div className="flex-1">
         <NoteEditor nodes={nodes} onChange={markDirty(setNodes)} />
       </div>
+      </div>
+
+      <aside className="hidden w-72 shrink-0 flex-col gap-6 overflow-y-auto lg:flex">
+        <section>
+          <h3 className="text-muted-foreground mb-2 text-xs font-medium uppercase tracking-wide">
+            Grafo local
+          </h3>
+          <div className="bg-surface flex h-[28rem] flex-col overflow-hidden rounded-lg border">
+            <GraphView notebookId={notebookId} panelPlacement="below" />
+          </div>
+        </section>
+        <section>
+          <h3 className="text-muted-foreground mb-2 text-xs font-medium uppercase tracking-wide">
+            Outline
+          </h3>
+          <NoteOutline nodes={nodes} />
+        </section>
+      </aside>
 
       <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <DialogContent>

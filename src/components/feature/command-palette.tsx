@@ -2,16 +2,22 @@
 
 import {
   BookOpen,
+  CalendarClock,
+  Calendar,
+  CheckSquare,
   FileText,
   GraduationCap,
   Home,
   Keyboard,
+  ListTodo,
+  Network,
   Plus,
   Settings,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { usePeek } from "@/components/feature/peek-provider";
 import {
   CommandDialog,
   CommandEmpty,
@@ -24,11 +30,19 @@ import {
 } from "@/components/ui/command/command";
 import { useToast } from "@/components/ui/toast/toast";
 import { getIconComponent } from "@/lib/icons";
+import {
+  eventService,
+  type StandaloneEvent,
+} from "@/services/event-service";
 import { noteService, type Note } from "@/services/note-service";
 import {
   notebookService,
   type Notebook,
 } from "@/services/notebook-service";
+import {
+  taskService,
+  type StandaloneTask,
+} from "@/services/task-service";
 
 interface CommandPaletteProps {
   open: boolean;
@@ -53,17 +67,25 @@ export function CommandPalette({
 }: CommandPaletteProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const peek = usePeek();
   const [notebooks, setNotebooks] = useState<Notebook[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
+  const [events, setEvents] = useState<StandaloneEvent[]>([]);
+  const [tasks, setTasks] = useState<StandaloneTask[]>([]);
 
   useEffect(() => {
     if (!open) return;
-    Promise.all([notebookService.list(), noteService.listAll()]).then(
-      ([nbs, ns]) => {
-        setNotebooks(nbs);
-        setNotes(ns);
-      }
-    );
+    Promise.all([
+      notebookService.list(),
+      noteService.listAll(),
+      eventService.listStandalone(),
+      taskService.listStandalone(),
+    ]).then(([nbs, ns, evs, ts]) => {
+      setNotebooks(nbs);
+      setNotes(ns);
+      setEvents(evs);
+      setTasks(ts);
+    });
   }, [open]);
 
   function go(path: string) {
@@ -164,6 +186,27 @@ export function CommandPalette({
             Todas as notas
           </CommandItem>
           <CommandItem
+            value="tarefas afazeres todo checklist"
+            onSelect={() => go("/tarefas")}
+          >
+            <ListTodo className="size-4" aria-hidden />
+            Tarefas
+          </CommandItem>
+          <CommandItem
+            value="calendario datas eventos prazos"
+            onSelect={() => go("/calendario")}
+          >
+            <Calendar className="size-4" aria-hidden />
+            Calendário
+          </CommandItem>
+          <CommandItem
+            value="grafo conhecimento knowledge graph rede conexoes"
+            onSelect={() => go("/grafo")}
+          >
+            <Network className="size-4" aria-hidden />
+            Grafo
+          </CommandItem>
+          <CommandItem
             value="configuracoes"
             disabled
             onSelect={() => undefined}
@@ -225,6 +268,48 @@ export function CommandPalette({
                   </CommandItem>
                 );
               })}
+            </CommandGroup>
+          </>
+        )}
+
+        {tasks.length > 0 && (
+          <>
+            <CommandSeparator />
+            <CommandGroup heading="Tarefas">
+              {tasks.slice(0, 10).map((t) => (
+                <CommandItem
+                  key={t.id}
+                  value={`${t.title} ${t.tags.map((tg) => tg.name).join(" ")}`}
+                  onSelect={() => {
+                    onOpenChange(false);
+                    peek.openTaskEdit(t.id);
+                  }}
+                >
+                  <CheckSquare className="size-4" aria-hidden />
+                  <span className="truncate">{t.title}</span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </>
+        )}
+
+        {events.length > 0 && (
+          <>
+            <CommandSeparator />
+            <CommandGroup heading="Eventos">
+              {events.slice(0, 10).map((ev) => (
+                <CommandItem
+                  key={ev.id}
+                  value={`${ev.name} ${ev.tags.map((tg) => tg.name).join(" ")}`}
+                  onSelect={() => {
+                    onOpenChange(false);
+                    peek.openEventPeek(ev.id);
+                  }}
+                >
+                  <CalendarClock className="size-4" aria-hidden />
+                  <span className="truncate">{ev.name}</span>
+                </CommandItem>
+              ))}
             </CommandGroup>
           </>
         )}

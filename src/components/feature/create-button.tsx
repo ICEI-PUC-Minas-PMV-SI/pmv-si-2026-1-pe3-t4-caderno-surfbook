@@ -1,8 +1,17 @@
 "use client";
 
-import { BookOpen, FileText, ListTodo, Plus } from "lucide-react";
+import {
+  BookOpen,
+  CalendarClock,
+  FileText,
+  ListTodo,
+  Plus,
+} from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 
+import { CreateNoteDialog } from "@/components/feature/create-note-dialog";
+import { usePeek } from "@/components/feature/peek-provider";
 import { Button } from "@/components/ui/button/button";
 import {
   DropdownMenu,
@@ -23,89 +32,53 @@ import {
  * - **G4 (comunicabilidade):** rótulos imperativos específicos por tipo
  * - **G2 (Shneiderman 5 — controle):** dropdown abre só sob demanda
  */
-interface CreateItem {
-  label: string;
-  href?: string;
-  icon: React.ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
-  shortcut?: string;
-  disabled?: boolean;
-}
-
-const DEFAULT_ITEMS: CreateItem[] = [
-  {
-    label: "Caderno",
-    href: "/cadernos/novo",
-    icon: BookOpen,
-    shortcut: "C",
-  },
-  {
-    label: "Nota",
-    icon: FileText,
-    shortcut: "N",
-    disabled: true,
-  },
-  {
-    label: "Tarefa",
-    icon: ListTodo,
-    shortcut: "T",
-    disabled: true,
-  },
-];
-
 interface CreateButtonProps {
-  items?: CreateItem[];
   className?: string;
 }
 
-export function CreateButton({
-  items = DEFAULT_ITEMS,
-  className,
-}: CreateButtonProps) {
+export function CreateButton({ className }: CreateButtonProps) {
+  const peek = usePeek();
+  const [noteDialogOpen, setNoteDialogOpen] = useState(false);
+
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button className={className}>
-          <Plus className="size-4" aria-hidden />
-          Novo
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
-        {items.map((item) => {
-          const content = (
-            <>
-              <item.icon className="size-4" aria-hidden />
-              {item.label}
-              {item.shortcut && (
-                <DropdownMenuShortcut>{item.shortcut}</DropdownMenuShortcut>
-              )}
-            </>
-          );
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button className={className}>
+            <Plus className="size-4" aria-hidden />
+            Novo
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-52">
+          <DropdownMenuItem asChild>
+            <Link href="/cadernos/novo">
+              <BookOpen className="size-4" aria-hidden />
+              Caderno
+              <DropdownMenuShortcut>C</DropdownMenuShortcut>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => setNoteDialogOpen(true)}>
+            <FileText className="size-4" aria-hidden />
+            Nota
+            <DropdownMenuShortcut>N</DropdownMenuShortcut>
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => peek.openTaskNew()}>
+            <ListTodo className="size-4" aria-hidden />
+            Tarefa
+            <DropdownMenuShortcut>T</DropdownMenuShortcut>
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => peek.openEventNew()}>
+            <CalendarClock className="size-4" aria-hidden />
+            Evento
+            <DropdownMenuShortcut>E</DropdownMenuShortcut>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
-          if (item.disabled) {
-            return (
-              <DropdownMenuItem
-                key={item.label}
-                disabled
-                className="cursor-not-allowed"
-              >
-                {content}
-              </DropdownMenuItem>
-            );
-          }
-
-          if (item.href) {
-            return (
-              <DropdownMenuItem key={item.label} asChild>
-                <Link href={item.href}>{content}</Link>
-              </DropdownMenuItem>
-            );
-          }
-
-          return (
-            <DropdownMenuItem key={item.label}>{content}</DropdownMenuItem>
-          );
-        })}
-      </DropdownMenuContent>
-    </DropdownMenu>
+      <CreateNoteDialog
+        open={noteDialogOpen}
+        onOpenChange={setNoteDialogOpen}
+      />
+    </>
   );
 }

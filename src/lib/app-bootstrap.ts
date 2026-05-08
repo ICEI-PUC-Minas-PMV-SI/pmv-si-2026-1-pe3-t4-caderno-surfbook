@@ -1,7 +1,9 @@
 import { seedTutorialIfNeeded } from "@/lib/seed-tutorial";
+import { eventService } from "@/services/event-service";
 import { noteService } from "@/services/note-service";
 import { notebookService } from "@/services/notebook-service";
 import { tagService } from "@/services/tag-service";
+import { taskService } from "@/services/task-service";
 
 /**
  * Bootstrap central — replica o pattern do `app-load_surf_book.js` do eixo-1.
@@ -42,6 +44,28 @@ function registerListeners() {
     tagService.upsertTags(note.tags);
   });
   noteService.on("removed", () => {
+    tagService.refresh();
+  });
+
+  // Standalone events → tag index
+  eventService.onStandalone("inserted", (ev) => {
+    tagService.upsertTags(ev.tags);
+  });
+  eventService.onStandalone("updated", ({ new: ev }) => {
+    tagService.upsertTags(ev.tags);
+  });
+  eventService.onStandalone("removed", () => {
+    tagService.refresh();
+  });
+
+  // Standalone tasks → tag index
+  taskService.onStandalone("inserted", (t) => {
+    tagService.upsertTags(t.tags);
+  });
+  taskService.onStandalone("updated", ({ new: t }) => {
+    tagService.upsertTags(t.tags);
+  });
+  taskService.onStandalone("removed", () => {
     tagService.refresh();
   });
 }

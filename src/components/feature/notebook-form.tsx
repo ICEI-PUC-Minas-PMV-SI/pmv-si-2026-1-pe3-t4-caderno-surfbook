@@ -22,6 +22,8 @@ export interface NotebookFormValues {
   iconName?: string;
   coverUrl?: string;
   tags: Tag[];
+  /** Data ISO yyyy-mm-dd; vazia = sem prazo. */
+  dueDate: string;
 }
 
 interface NotebookFormProps {
@@ -49,6 +51,7 @@ export function NotebookForm({
   const iconId = useId();
   const coverId = useId();
   const tagsId = useId();
+  const dueDateId = useId();
   const errorId = useId();
 
   const [name, setName] = useState(initial?.name ?? "");
@@ -58,6 +61,7 @@ export function NotebookForm({
   );
   const [coverUrl, setCoverUrl] = useState(initial?.coverUrl ?? "");
   const [tags, setTags] = useState<Tag[]>(initial?.tags ?? []);
+  const [dueDate, setDueDate] = useState(initial?.dueDate ?? "");
   const [tagSuggestions, setTagSuggestions] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -88,6 +92,7 @@ export function NotebookForm({
         iconName,
         coverUrl: coverUrl.trim() || undefined,
         tags,
+        dueDate: dueDate.trim(),
       });
     } catch (err) {
       setError(
@@ -156,6 +161,20 @@ export function NotebookForm({
         </p>
       </div>
 
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor={dueDateId}>Data limite</Label>
+        <Input
+          id={dueDateId}
+          type="date"
+          value={dueDate}
+          onChange={(e) => setDueDate(e.target.value)}
+        />
+        <p className="text-muted-foreground text-xs">
+          Opcional. Se definido, aparece no calendário e no painel de próximos
+          prazos.
+        </p>
+      </div>
+
       {error && (
         <p id={errorId} className="text-danger text-sm" role="alert">
           {error}
@@ -184,6 +203,7 @@ export function toCreateInput(values: NotebookFormValues): CreateNotebookInput {
     iconName: values.iconName,
     coverUrl: values.coverUrl,
     tags: values.tags,
+    dueDate: values.dueDate || undefined,
   };
 }
 
@@ -194,5 +214,7 @@ export function toUpdateInput(values: NotebookFormValues): UpdateNotebookInput {
     iconName: values.iconName,
     coverUrl: values.coverUrl,
     tags: values.tags,
+    // string vazia → null (limpa); preenchida → string
+    dueDate: values.dueDate ? values.dueDate : null,
   };
 }

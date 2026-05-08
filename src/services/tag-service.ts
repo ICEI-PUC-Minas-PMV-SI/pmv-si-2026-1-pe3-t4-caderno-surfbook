@@ -1,7 +1,9 @@
 import { Emitter } from "@/lib/emitter";
 
+import { eventService } from "./event-service";
 import { noteService } from "./note-service";
 import { notebookService } from "./notebook-service";
+import { taskService } from "./task-service";
 import type { Tag } from "@/types/tag";
 
 type TagServiceEvents = {
@@ -37,23 +39,23 @@ class TagService extends Emitter<TagServiceEvents> {
   async refresh(): Promise<void> {
     if (this.refreshing) return this.refreshing;
     this.refreshing = (async () => {
-      const [notebooks, notes] = await Promise.all([
+      const [notebooks, notes, events, tasks] = await Promise.all([
         notebookService.list(),
         noteService.listAll(),
+        eventService.listStandalone(),
+        taskService.listStandalone(),
       ]);
       const next = new Map<string, Tag>();
-      for (const nb of notebooks) {
-        for (const tag of nb.tags ?? []) {
+      function include(tags: Tag[] | undefined) {
+        for (const tag of tags ?? []) {
           const key = tag.name.toLowerCase();
           if (!next.has(key)) next.set(key, tag);
         }
       }
-      for (const note of notes) {
-        for (const tag of note.tags ?? []) {
-          const key = tag.name.toLowerCase();
-          if (!next.has(key)) next.set(key, tag);
-        }
-      }
+      for (const nb of notebooks) include(nb.tags);
+      for (const note of notes) include(note.tags);
+      for (const ev of events) include(ev.tags);
+      for (const t of tasks) include(t.tags);
       this.byNameLower = next;
       this.initialized = true;
       this.emit("changed", Array.from(this.byNameLower.values()));

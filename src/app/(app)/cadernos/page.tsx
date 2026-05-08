@@ -1,12 +1,14 @@
 "use client";
 
-import { BookOpen, Eye, EyeOff, Plus } from "lucide-react";
+import { BookOpen, Eye, EyeOff, Plus, Upload } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { NotebookCard } from "@/components/feature/notebook-card";
 import { Button } from "@/components/ui/button/button";
 import { EmptyState } from "@/components/ui/empty-state/empty-state";
+import { useToast } from "@/components/ui/toast/toast";
+import { importNotebookFromZip } from "@/lib/notebook-import";
 import {
   notebookService,
   type Notebook,
@@ -15,10 +17,37 @@ import {
 export default function CadernosPage() {
   const [notebooks, setNotebooks] = useState<Notebook[] | null>(null);
   const [showHidden, setShowHidden] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const { toast } = useToast();
 
   const reload = useCallback(() => {
     notebookService.list().then(setNotebooks);
   }, []);
+
+  async function handleImportFile(file: File) {
+    setImporting(true);
+    try {
+      const result = await importNotebookFromZip(file);
+      toast({
+        title: "Caderno importado",
+        description: `“${result.notebook.name}” com ${result.noteCount} nota${result.noteCount === 1 ? "" : "s"}.`,
+        variant: "success",
+      });
+      reload();
+    } catch (err) {
+      toast({
+        title: "Falha ao importar",
+        description:
+          err instanceof Error
+            ? err.message
+            : "Verifique se o .zip está no formato esperado.",
+        variant: "danger",
+      });
+    } finally {
+      setImporting(false);
+    }
+  }
 
   useEffect(() => {
     reload();
@@ -50,12 +79,33 @@ export default function CadernosPage() {
             Seus cadernos de estudo organizados.
           </p>
         </div>
-        <Button asChild>
-          <Link href="/cadernos/novo">
-            <Plus className="size-4" aria-hidden />
-            Novo caderno
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".zip,application/zip,application/x-zip-compressed"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleImportFile(file);
+              e.target.value = ""; // permite re-importar mesmo arquivo
+            }}
+          />
+          <Button
+            variant="ghost"
+            onClick={() => fileInputRef.current?.click()}
+            loading={importing}
+          >
+            <Upload className="size-4" aria-hidden />
+            Importar .zip
+          </Button>
+          <Button asChild>
+            <Link href="/cadernos/novo">
+              <Plus className="size-4" aria-hidden />
+              Novo caderno
+            </Link>
+          </Button>
+        </div>
       </header>
 
       {visible === null && (

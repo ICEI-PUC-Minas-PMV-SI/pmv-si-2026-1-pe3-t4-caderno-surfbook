@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Download,
   Edit3,
   Eye,
   EyeOff,
@@ -12,6 +13,10 @@ import { useState } from "react";
 
 import { DeleteNotebookDialog } from "@/components/feature/delete-notebook-dialog";
 import { EditNotebookDialog } from "@/components/feature/edit-notebook-dialog";
+import {
+  peekClickHandler,
+  usePeek,
+} from "@/components/feature/peek-provider";
 import { Badge } from "@/components/ui/badge/badge";
 import { Button } from "@/components/ui/button/button";
 import {
@@ -31,6 +36,8 @@ import {
 } from "@/components/ui/dropdown-menu/dropdown-menu";
 import { useToast } from "@/components/ui/toast/toast";
 import { getIconComponent } from "@/lib/icons";
+import { downloadNotebookZip } from "@/lib/notebook-export";
+import { noteService } from "@/services/note-service";
 import { notebookService, type Notebook } from "@/services/notebook-service";
 
 interface NotebookCardProps {
@@ -42,6 +49,25 @@ export function NotebookCard({ notebook, onUpdate }: NotebookCardProps) {
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const { toast } = useToast();
+  const peek = usePeek();
+
+  async function handleExport() {
+    try {
+      const notes = await noteService.listByNotebook(notebook.id);
+      await downloadNotebookZip(notebook, notes);
+      toast({
+        title: "Caderno exportado",
+        description: `${notes.length} nota${notes.length === 1 ? "" : "s"} no .zip.`,
+        variant: "success",
+      });
+    } catch (err) {
+      toast({
+        title: "Não foi possível exportar",
+        description: err instanceof Error ? err.message : undefined,
+        variant: "danger",
+      });
+    }
+  }
 
   async function toggleHidden() {
     try {
@@ -74,6 +100,7 @@ export function NotebookCard({ notebook, onUpdate }: NotebookCardProps) {
       <div className="group relative">
         <Link
           href={`/cadernos/${notebook.id}`}
+          onClick={peekClickHandler(() => peek.openNotebookPeek(notebook.id))}
           className="block rounded-lg focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500"
           aria-label={`Abrir caderno ${notebook.name}`}
         >
@@ -142,6 +169,10 @@ export function NotebookCard({ notebook, onUpdate }: NotebookCardProps) {
               <DropdownMenuItem onSelect={() => setEditing(true)}>
                 <Edit3 className="size-4" aria-hidden />
                 Editar
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={handleExport}>
+                <Download className="size-4" aria-hidden />
+                Exportar como .zip
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={toggleHidden}>
                 {notebook.hidden ? (

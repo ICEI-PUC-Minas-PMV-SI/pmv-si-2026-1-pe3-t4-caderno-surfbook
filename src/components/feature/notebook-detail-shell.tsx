@@ -3,14 +3,17 @@
 import {
   ArrowLeft,
   Calendar,
+  Download,
   FileText,
   ListTodo,
   MoreVertical,
+  Network,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
+import { CompletionCheckbox } from "@/components/feature/completion-checkbox";
 import { DeleteNotebookDialog } from "@/components/feature/delete-notebook-dialog";
 import { EditNotebookDialog } from "@/components/feature/edit-notebook-dialog";
 import { Badge } from "@/components/ui/badge/badge";
@@ -24,7 +27,9 @@ import {
 } from "@/components/ui/dropdown-menu/dropdown-menu";
 import { EmptyState } from "@/components/ui/empty-state/empty-state";
 import { Tabs, TabsContent } from "@/components/ui/tabs/tabs";
+import { useToast } from "@/components/ui/toast/toast";
 import { getIconComponent } from "@/lib/icons";
+import { downloadNotebookZip } from "@/lib/notebook-export";
 import { noteService } from "@/services/note-service";
 import {
   notebookService,
@@ -36,7 +41,7 @@ interface NotebookDetailShellProps {
 }
 
 /**
- * Shell compartilhado pelas páginas de um caderno (notas / tarefas / eventos).
+ * Shell compartilhado pelas páginas de um caderno (notas / tarefas / calendário).
  * Renderiza:
  * - Back link
  * - Cover banner (se houver)
@@ -59,6 +64,26 @@ export function NotebookDetailShell({ children }: NotebookDetailShellProps) {
   const [noteCount, setNoteCount] = useState(0);
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const { toast } = useToast();
+
+  async function handleExport() {
+    if (!notebook) return;
+    try {
+      const notes = await noteService.listByNotebook(notebook.id);
+      await downloadNotebookZip(notebook, notes);
+      toast({
+        title: "Caderno exportado",
+        description: `${notes.length} nota${notes.length === 1 ? "" : "s"} no .zip.`,
+        variant: "success",
+      });
+    } catch (err) {
+      toast({
+        title: "Não foi possível exportar",
+        description: err instanceof Error ? err.message : undefined,
+        variant: "danger",
+      });
+    }
+  }
 
   const loadNotebook = useCallback(async () => {
     const nb = await notebookService.get(notebookId);
@@ -132,15 +157,16 @@ export function NotebookDetailShell({ children }: NotebookDetailShellProps) {
       href: `/cadernos/${notebookId}/tarefas`,
       label: "Tarefas",
       icon: ListTodo,
-      disabled: true,
-      hint: "em breve",
     },
     {
-      href: `/cadernos/${notebookId}/eventos`,
-      label: "Eventos",
+      href: `/cadernos/${notebookId}/calendario`,
+      label: "Calendário",
       icon: Calendar,
-      disabled: true,
-      hint: "em breve",
+    },
+    {
+      href: `/cadernos/${notebookId}/grafo`,
+      label: "Grafo",
+      icon: Network,
     },
   ];
 
@@ -191,6 +217,18 @@ export function NotebookDetailShell({ children }: NotebookDetailShellProps) {
                 ))}
               </div>
             )}
+            {notebook.dueDate && (
+              <div className="pt-2">
+                <CompletionCheckbox
+                  completedAt={notebook.completedAt ?? null}
+                  onChange={async (completedAt) => {
+                    await notebookService.update(notebook.id, {
+                      completedAt,
+                    });
+                  }}
+                />
+              </div>
+            )}
           </div>
         </div>
         <DropdownMenu>
@@ -206,6 +244,10 @@ export function NotebookDetailShell({ children }: NotebookDetailShellProps) {
           <DropdownMenuContent align="end">
             <DropdownMenuItem onSelect={() => setEditing(true)}>
               Editar caderno
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={handleExport}>
+              <Download className="size-4" aria-hidden />
+              Exportar como .zip
             </DropdownMenuItem>
             {!notebook.system && (
               <>

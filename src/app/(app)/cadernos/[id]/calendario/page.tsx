@@ -4,27 +4,30 @@ import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
+import { MonthCalendar } from "@/components/feature/month-calendar";
 import { NotebookDetailShell } from "@/components/feature/notebook-detail-shell";
-import { TaskFormDialog } from "@/components/feature/task-form-dialog";
-import { TaskList } from "@/components/feature/task-list";
+import { usePeek } from "@/components/feature/peek-provider";
 import { Button } from "@/components/ui/button/button";
-import { taskService, type TaskItem } from "@/services/task-service";
+import {
+  eventService,
+  type CalendarEvent,
+} from "@/services/event-service";
 
-export default function NotebookTasksPage() {
+export default function NotebookCalendarPage() {
   const params = useParams<{ id: string }>();
   const notebookId = params.id;
-  const [items, setItems] = useState<TaskItem[]>([]);
-  const [creating, setCreating] = useState(false);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const peek = usePeek();
 
   useEffect(() => {
     let cancelled = false;
     function reload() {
-      taskService.listByNotebook(notebookId).then((items) => {
-        if (!cancelled) setItems(items);
+      eventService.listByNotebook(notebookId).then((evs) => {
+        if (!cancelled) setEvents(evs);
       });
     }
     reload();
-    const off = taskService.subscribe(reload);
+    const off = eventService.subscribe(reload);
     return () => {
       cancelled = true;
       off();
@@ -37,26 +40,19 @@ export default function NotebookTasksPage() {
         <header className="flex items-start justify-between gap-3">
           <div>
             <h2 className="font-display text-xl font-semibold tracking-tight">
-              Tarefas do caderno
+              Calendário do caderno
             </h2>
             <p className="text-muted-foreground text-sm">
-              Caderno + notas com data + tarefas avulsas vinculadas a este
-              caderno.
+              Eventos derivados (caderno + notas com data) e eventos avulsos
+              vinculados a este caderno.
             </p>
           </div>
-          <Button onClick={() => setCreating(true)} size="sm">
+          <Button onClick={() => peek.openEventNew(notebookId)} size="sm">
             <Plus className="size-4" aria-hidden />
-            Nova tarefa
+            Novo evento
           </Button>
         </header>
-
-        <TaskList items={items} notebookContext={notebookId} />
-
-        <TaskFormDialog
-          open={creating}
-          onOpenChange={setCreating}
-          defaultNotebookId={notebookId}
-        />
+        <MonthCalendar events={events} />
       </div>
     </NotebookDetailShell>
   );

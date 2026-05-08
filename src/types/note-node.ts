@@ -38,6 +38,8 @@ export type ListNode = NoteNodeBase & {
 };
 
 export type ChecklistItem = {
+  /** UUID estável — necessário pra referenciar como task no agregador. */
+  id: string;
   checked: boolean;
   text: string;
   indent: number;

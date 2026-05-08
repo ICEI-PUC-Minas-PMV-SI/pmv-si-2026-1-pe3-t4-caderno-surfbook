@@ -36,7 +36,12 @@ function normalizeNodes(raw: unknown): Note["nodes"] {
         items: items.map((item) => {
           if (typeof item === "string") {
             return n.type === "checklist"
-              ? { checked: false, text: item, indent: 0 }
+              ? {
+                  id: crypto.randomUUID(),
+                  checked: false,
+                  text: item,
+                  indent: 0,
+                }
               : { text: item, indent: 0 };
           }
           if (item && typeof item === "object") {
@@ -45,6 +50,11 @@ function normalizeNodes(raw: unknown): Note["nodes"] {
               typeof it.indent === "number" && it.indent >= 0 ? it.indent : 0;
             if (n.type === "checklist") {
               return {
+                // Backfill id em items antigos sem essa propriedade
+                id:
+                  typeof it.id === "string" && it.id
+                    ? it.id
+                    : crypto.randomUUID(),
                 checked: Boolean(it.checked),
                 text: String(it.text ?? ""),
                 indent,
@@ -53,7 +63,12 @@ function normalizeNodes(raw: unknown): Note["nodes"] {
             return { text: String(it.text ?? ""), indent };
           }
           return n.type === "checklist"
-            ? { checked: false, text: "", indent: 0 }
+            ? {
+                id: crypto.randomUUID(),
+                checked: false,
+                text: "",
+                indent: 0,
+              }
             : { text: "", indent: 0 };
         }),
       } as Note["nodes"][number];
@@ -71,6 +86,8 @@ function normalize(raw: Partial<Note>): Note {
     title: raw.title ?? "",
     nodes: normalizeNodes(raw.nodes),
     tags: raw.tags ?? [],
+    dueDate: raw.dueDate,
+    completedAt: raw.completedAt,
     position: typeof raw.position === "number" ? raw.position : 0,
     createdAt: raw.createdAt ?? now,
     updatedAt: raw.updatedAt ?? raw.createdAt ?? now,
@@ -134,6 +151,7 @@ export class MockNoteRepository
       title: input.title?.trim() ?? "",
       nodes: input.nodes ?? [],
       tags: input.tags ?? [],
+      dueDate: input.dueDate || undefined,
       position: maxPos + 1,
       createdAt: now,
       updatedAt: now,
@@ -156,6 +174,14 @@ export class MockNoteRepository
       title: input.title !== undefined ? input.title : all[idx].title,
       nodes: input.nodes ?? all[idx].nodes,
       tags: input.tags ?? all[idx].tags,
+      dueDate:
+        "dueDate" in input
+          ? (input.dueDate ?? undefined)
+          : all[idx].dueDate,
+      completedAt:
+        "completedAt" in input
+          ? (input.completedAt ?? undefined)
+          : all[idx].completedAt,
       updatedAt: new Date().toISOString(),
     };
 

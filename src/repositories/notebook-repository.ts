@@ -8,6 +8,11 @@ export interface Notebook {
   iconName?: string;
   coverUrl?: string;
   tags: Tag[];
+  /** Data ISO (yyyy-mm-dd) — quando definida, vira um evento no calendário. */
+  dueDate?: string;
+  /** ISO datetime — marca conclusão. Apenas itens com dueDate viram tasks no
+   *  feed de tarefas; este campo registra quando foi marcado feito. */
+  completedAt?: string;
   system: boolean;
   hidden: boolean;
   createdAt: string;
@@ -20,6 +25,7 @@ export interface CreateNotebookInput {
   iconName?: string;
   coverUrl?: string;
   tags?: Tag[];
+  dueDate?: string;
   /** Marca como caderno do sistema (não pode ser excluído). Usado pelo seed do tutorial. */
   system?: boolean;
 }
@@ -30,6 +36,9 @@ export interface UpdateNotebookInput {
   iconName?: string;
   coverUrl?: string;
   tags?: Tag[];
+  dueDate?: string | null;
+  /** null limpa (volta a pendente); string ISO marca conclusão. */
+  completedAt?: string | null;
   hidden?: boolean;
 }
 

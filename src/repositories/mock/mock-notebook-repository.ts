@@ -52,6 +52,8 @@ function normalize(raw: Partial<Notebook>): Notebook {
     iconName: raw.iconName,
     coverUrl: raw.coverUrl,
     tags: raw.tags ?? [],
+    dueDate: raw.dueDate,
+    completedAt: raw.completedAt,
     system: raw.system ?? false,
     hidden: raw.hidden ?? false,
     createdAt: raw.createdAt ?? new Date().toISOString(),
@@ -101,6 +103,7 @@ export class MockNotebookRepository
       iconName: input.iconName ?? randomIcon(),
       coverUrl: input.coverUrl?.trim() || undefined,
       tags: input.tags ?? [],
+      dueDate: input.dueDate || undefined,
       system: input.system ?? false,
       hidden: false,
       createdAt: now,
@@ -125,6 +128,15 @@ export class MockNotebookRepository
       name: input.name?.trim() ?? all[idx].name,
       description: input.description?.trim() ?? all[idx].description,
       tags: input.tags ?? all[idx].tags,
+      // dueDate aceita null como "limpar" — converte pra undefined
+      dueDate:
+        "dueDate" in input
+          ? (input.dueDate ?? undefined)
+          : all[idx].dueDate,
+      completedAt:
+        "completedAt" in input
+          ? (input.completedAt ?? undefined)
+          : all[idx].completedAt,
       updatedAt: new Date().toISOString(),
     };
 

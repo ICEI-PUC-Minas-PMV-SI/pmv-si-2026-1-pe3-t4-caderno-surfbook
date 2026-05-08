@@ -173,8 +173,20 @@ function transformNode(oldNode: NoteNode, target: NodeTemplate): NoteNode {
         type: "checklist",
         ordered: target.ordered,
         items: lines.length
-          ? lines.map((t) => ({ checked: false, text: t.trim(), indent: 0 }))
-          : [{ checked: false, text: "", indent: 0 }],
+          ? lines.map((t) => ({
+              id: crypto.randomUUID(),
+              checked: false,
+              text: t.trim(),
+              indent: 0,
+            }))
+          : [
+              {
+                id: crypto.randomUUID(),
+                checked: false,
+                text: "",
+                indent: 0,
+              },
+            ],
       };
     }
     case "code":
@@ -207,7 +219,19 @@ export function NoteEditor({
   function transformExistingNode(id: string, template: NodeTemplate) {
     const existing = nodes.find((n) => n.id === id);
     if (!existing) return;
-    const transformed = transformNode(existing, template);
+    // Mesmo cuidado do insertAfter — checklists do template precisam de
+    // ids únicos por item ao concretizar
+    const concreteTemplate =
+      template.type === "checklist"
+        ? {
+            ...template,
+            items: template.items.map((it) => ({
+              ...it,
+              id: crypto.randomUUID(),
+            })),
+          }
+        : template;
+    const transformed = transformNode(existing, concreteTemplate);
     onChange(nodes.map((n) => (n.id === id ? transformed : n)));
     setPendingFocusId(id);
   }
@@ -227,8 +251,20 @@ export function NoteEditor({
         ? list.findIndex((n) => n.id === afterId) + 1
         : list.length;
     const newId = crypto.randomUUID();
+    // Checklist items do template são re-id'ados no insert pra cada item ter
+    // id estável (necessário pra agregar como task).
+    const concreteTemplate =
+      template.type === "checklist"
+        ? {
+            ...template,
+            items: template.items.map((it) => ({
+              ...it,
+              id: crypto.randomUUID(),
+            })),
+          }
+        : template;
     const node = {
-      ...template,
+      ...concreteTemplate,
       id: newId,
       position: at,
     } as NoteNode;
@@ -1317,7 +1353,12 @@ function ChecklistBlock({
     const items = [...node.items];
     const newAt = at ?? items.length;
     const indent = newAt > 0 ? items[newAt - 1].indent : 0;
-    items.splice(newAt, 0, { checked: false, text: "", indent });
+    items.splice(newAt, 0, {
+      id: crypto.randomUUID(),
+      checked: false,
+      text: "",
+      indent,
+    });
     onUpdate({ ...node, items });
     setEditingIndex(newAt);
   }
@@ -1875,7 +1916,8 @@ const ADD_OPTIONS: {
     template: {
       type: "checklist",
       ordered: false,
-      items: [{ checked: false, text: "", indent: 0 }],
+      // id é placeholder — `insertAfter` regenera por item antes de inserir
+      items: [{ id: "", checked: false, text: "", indent: 0 }],
     },
   },
   {

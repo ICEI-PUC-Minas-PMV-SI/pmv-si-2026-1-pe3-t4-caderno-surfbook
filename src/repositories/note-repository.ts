@@ -9,6 +9,11 @@ export interface Note {
   /** Conteúdo em forma de blocos tipados (modelo Notion-like). */
   nodes: NoteNode[];
   tags: Tag[];
+  /** Data ISO (yyyy-mm-dd) — quando definida, vira um evento no calendário. */
+  dueDate?: string;
+  /** ISO datetime — marca conclusão. Apenas notas com dueDate viram tasks no
+   *  feed de tarefas; este campo registra quando foi marcado feito. */
+  completedAt?: string;
   /** Posição na ordem manual dentro do caderno (incrementa por criação). */
   position: number;
   createdAt: string;
@@ -20,12 +25,16 @@ export interface CreateNoteInput {
   title?: string;
   nodes?: NoteNode[];
   tags?: Tag[];
+  dueDate?: string;
 }
 
 export interface UpdateNoteInput {
   title?: string;
   nodes?: NoteNode[];
   tags?: Tag[];
+  dueDate?: string | null;
+  /** null limpa (volta a pendente); string ISO marca conclusão. */
+  completedAt?: string | null;
 }
 
 export type NoteEvents = {

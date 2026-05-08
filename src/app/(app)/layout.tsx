@@ -19,6 +19,7 @@ import { useEffect, useState } from "react";
 
 import { CommandPalette } from "@/components/feature/command-palette";
 import { CreateButton } from "@/components/feature/create-button";
+import { PeekProvider } from "@/components/feature/peek-provider";
 import { ShortcutsHelp } from "@/components/feature/shortcuts-help";
 import { Avatar } from "@/components/ui/avatar/avatar";
 import { Button } from "@/components/ui/button/button";
@@ -113,6 +114,7 @@ export default function AppLayout({
   }
 
   return (
+    <PeekProvider>
     <div className="bg-bg flex h-screen">
       <Sidebar>
         <SidebarHeader>
@@ -136,28 +138,13 @@ export default function AppLayout({
             <SidebarItem href="/notas" icon={FileText}>
               Notas
             </SidebarItem>
-            <SidebarItem
-              href="/tarefas"
-              icon={ListTodo}
-              disabled
-              hint="em breve"
-            >
+            <SidebarItem href="/tarefas" icon={ListTodo}>
               Tarefas
             </SidebarItem>
-            <SidebarItem
-              href="/calendario"
-              icon={Calendar}
-              disabled
-              hint="em breve"
-            >
+            <SidebarItem href="/calendario" icon={Calendar}>
               Calendário
             </SidebarItem>
-            <SidebarItem
-              href="/grafo"
-              icon={Network}
-              disabled
-              hint="em breve"
-            >
+            <SidebarItem href="/grafo" icon={Network}>
               Grafo
             </SidebarItem>
           </SidebarSection>
@@ -239,5 +226,6 @@ export default function AppLayout({
       />
       <ShortcutsHelp open={helpOpen} onOpenChange={setHelpOpen} />
     </div>
+    </PeekProvider>
   );
 }
